@@ -1,5 +1,7 @@
 node_modules/
 build/
+.aistudio/
+assets/.aistudio/
 dist/
 coverage/
 .DS_Store
