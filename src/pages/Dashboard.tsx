@@ -3,12 +3,30 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Transaction, TransactionType, PaymentMethod, Currency } from '../types';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { LogOut, Plus, Minus, Trash2, X, ChevronLeft, ChevronRight, Filter, ChevronDown, Check, Globe, Pencil } from 'lucide-react';
+import { LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../i18n/LanguageContext';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
 
-const EXPENSE_CATEGORIES = ['Meter Bills', 'Food', 'Groceries', 'Electronics', 'Transport', 'Entertainment', 'Health', 'Other'];
-const INCOME_CATEGORIES = ['Salary', 'Bonus', 'Freelance', 'Investment', 'Gift', 'Other'];
+const EXPENSE_CATEGORIES = ['bills', 'food', 'groceries', 'electronics', 'transport', 'entertainment', 'health', 'other'];
+const INCOME_CATEGORIES = ['salary', 'bonus', 'freelance', 'investment', 'gift', 'other'];
+const CATEGORY_LABEL_KEYS = {
+  'bills': 'category_meter_bills',
+  'food': 'category_food',
+  'groceries': 'category_groceries',
+  'electronics': 'category_electronics',
+  'transport': 'category_transport',
+  'entertainment': 'category_entertainment',
+  'health': 'category_health',
+  'other': 'category_other',
+  'salary': 'category_salary',
+  'bonus': 'category_bonus',
+  'freelance': 'category_freelance',
+  'investment': 'category_investment',
+  'gift': 'category_gift',
+} as const;
+type CategoryValue = keyof typeof CATEGORY_LABEL_KEYS;
 const MMK_PAYMENT_METHODS: PaymentMethod[] = ['cash', 'kpay', 'wave', 'bank transfer'];
 const THB_PAYMENT_METHODS: PaymentMethod[] = ['cash', 'true money', 'bank transfer'];
 
@@ -18,7 +36,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [user, setUser] = useState<any>(null);
-  
+
   // Delete Confirmation State
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -43,19 +61,24 @@ export function Dashboard() {
   // Filter State
   const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [filterPayment, setFilterPayment] = useState<PaymentMethod | 'all'>('all');
-  
+
   // Balance Display Currency
   const [balanceCurrency, setBalanceCurrency] = useState<Currency>('MMK');
-  
+
   // Category Display Currency
   const [categoryCurrency, setCategoryCurrency] = useState<Currency>('MMK');
-  
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-  
+
   // Month Selection State
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+
+  const translateCategory = (value: string) => {
+    const key = CATEGORY_LABEL_KEYS[value as CategoryValue];
+    return key ? t(key) : value;
+  };
 
   useEffect(() => {
     checkUser();
@@ -92,11 +115,11 @@ export function Dashboard() {
 
   const fetchTransactions = async () => {
     setLoading(true);
-    
+
     // Calculate start and end based on selectedMonth
     const [year, month] = selectedMonth.split('-');
     const dateInMonth = new Date(Number(year), Number(month) - 1, 1);
-    
+
     const start = format(startOfMonth(dateInMonth), 'yyyy-MM-dd');
     const end = format(endOfMonth(dateInMonth), 'yyyy-MM-dd');
 
@@ -155,7 +178,7 @@ export function Dashboard() {
         .single();
 
       if (error) throw error;
-      
+
       setTransactions(prev => [data as Transaction, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       handleClearForm();
     } catch (error) {
@@ -207,7 +230,7 @@ export function Dashboard() {
         .single();
 
       if (error) throw error;
-      
+
       setTransactions(prev => prev.map(t => t.id === editingTx.id ? (data as Transaction) : t));
       setEditingTx(null);
     } catch (error) {
@@ -244,6 +267,7 @@ export function Dashboard() {
           result[tx.category] = { MMK: 0, THB: 0 };
         }
         result[tx.category][cur as 'MMK' | 'THB'] += tx.amount;
+        console.log(tx.category)
       }
     });
     return result;
@@ -319,7 +343,7 @@ export function Dashboard() {
                 <Globe className="w-4 h-4" />
                 <span className="ml-2 text-xs font-semibold uppercase">{language}</span>
               </button>
-              <button 
+              <button
                 onClick={handleSignOut}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2"
               >
@@ -332,7 +356,7 @@ export function Dashboard() {
           <main className="flex-1 flex flex-col gap-6 pb-6">
             {/* Top Section: Overview & Input */}
             <div className="flex flex-col gap-6">
-              
+
               {/* Balances */}
               <div className="flex flex-col gap-4">
                 <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 relative overflow-hidden">
@@ -345,27 +369,37 @@ export function Dashboard() {
                       <option value="MMK">MMK</option>
                       <option value="THB">THB</option>
                     </select>
-                    <input
-                      type="month"
-                      value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
-                      className="bg-slate-900 border border-white/10 text-slate-300 text-sm sm:text-[10px] rounded-lg px-3 sm:px-2 py-2 sm:py-1.5 focus:outline-none focus:border-indigo-500/50"
+                    <DatePicker
+                      selected={parseISO(`${selectedMonth}-01`)}
+                      onChange={(date: Date | null) => {
+                        if (date) {
+                          setSelectedMonth(format(date, 'yyyy-MM'));
+                        }
+                      }}
+                      dateFormat="MMMM yyyy"
+                      showMonthYearPicker
+                      portalId="datepicker-portal"
+                      onKeyDown={(e) => e.preventDefault()}
+                      className="bg-slate-900 border border-white/10 text-slate-300 text-sm sm:text-xs rounded-lg px-3 sm:px-2 py-2 sm:py-1.5 caret-transparent focus:outline-none focus:border-indigo-500/50 cursor-pointer w-32 sm:w-28 text-center animate-none"
+                      popperPlacement="bottom-end"
+                      popperClassName="dashboard-month-picker-popper"
+                      wrapperClassName="flex items-center"
                     />
                   </div>
-                  
-                  <p className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 mt-2">{t('current_balance')}</p>
+
+                  <p className="text-xs sm:text-[13px] font-bold text-slate-400 uppercase tracking-widest mb-1 mt-2">{t('current_balance')}</p>
                   <p className="text-2xl sm:text-2xl font-light text-white mb-2">
                     {formatCurrency(balances[balanceCurrency].balance, balanceCurrency)}
                   </p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-                    <p className="text-xs sm:text-[10px] font-bold text-emerald-400 uppercase tracking-widest mb-1">{t('total_income')}</p>
+                    <p className="text-[15px] sm:text-[13px] font-bold text-emerald-400 uppercase tracking-widest mb-1">{t('total_income')}</p>
                     <p className="text-base sm:text-lg font-light text-emerald-400">+{formatCurrency(balances[balanceCurrency].totalIncome, balanceCurrency)}</p>
                   </div>
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
-                    <p className="text-xs sm:text-[10px] font-bold text-rose-400 uppercase tracking-widest mb-1">{t('total_expenses')}</p>
+                    <p className="text-[15px] sm:text-[13px] font-bold text-rose-400 uppercase tracking-widest mb-1">{t('total_expenses')}</p>
                     <p className="text-base sm:text-lg font-light text-rose-400">-{formatCurrency(balances[balanceCurrency].totalExpense, balanceCurrency)}</p>
                   </div>
                 </div>
@@ -373,443 +407,443 @@ export function Dashboard() {
 
               {/* Input Form */}
               <div className="flex flex-col bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-hidden">
-            <h2 className="text-lg font-semibold mb-4 text-white">{t('new_transaction')}</h2>
-            <div className="flex flex-col gap-4 flex-1">
-              <div className="flex gap-2 mb-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('income')}
-                  className={cn(
-                    "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
-                    activeTab === 'income' 
-                      ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-2 border-emerald-400/50" 
-                      : "bg-white/5 text-slate-400 border border-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30"
-                  )}
-                >
-                  {t('income')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('expense')}
-                  className={cn(
-                    "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
-                    activeTab === 'expense' 
-                      ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20 border-2 border-rose-400/50" 
-                      : "bg-white/5 text-slate-400 border border-white/5 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30"
-                  )}
-                >
-                  {t('expense')}
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div className="flex gap-3">
-                  <div className="flex-1">
-                    <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0.01"
-                      required
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
-                      placeholder="0.00"
-                    />
+                <h2 className="text-lg font-semibold mb-4 text-white">{t('new_transaction')}</h2>
+                <div className="flex flex-col gap-4 flex-1">
+                  <div className="flex gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('income')}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
+                        activeTab === 'income'
+                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-2 border-emerald-400/50"
+                          : "bg-white/5 text-slate-400 border border-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30"
+                      )}
+                    >
+                      {t('income')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('expense')}
+                      className={cn(
+                        "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
+                        activeTab === 'expense'
+                          ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20 border-2 border-rose-400/50"
+                          : "bg-white/5 text-slate-400 border border-white/5 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30"
+                      )}
+                    >
+                      {t('expense')}
+                    </button>
                   </div>
-                  <div className="w-24">
-                    <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          required
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
+                          placeholder="0.00"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+                        <select
+                          value={formCurrency}
+                          onChange={(e) => setFormCurrency(e.target.value as Currency)}
+                          className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                        >
+                          <option value="MMK">MMK</option>
+                          <option value="THB">THB</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
+                        <input
+                          type="date"
+                          required
+                          value={date}
+                          onChange={(e) => setDate(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
+                        <select
+                          value={category}
+                          onChange={(e) => setCategory(e.target.value)}
+                          className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
+                        >
+                          {(activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
+                            <option key={cat} value={cat}>{translateCategory(cat)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
+                      >
+                        {(formCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
+                          <option key={method} value={method}>{method}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
+                      <input
+                        type="text"
+                        value={remark}
+                        onChange={(e) => setRemark(e.target.value)}
+                        className={cn(
+                          "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
+                          remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
+                            ? "border-rose-500 focus:border-rose-500"
+                            : "border-white/10 focus:border-indigo-500/50"
+                        )}
+                        placeholder={t('remark_placeholder')}
+                      />
+                      {remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
+                        <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-2">
+                      <button
+                        type="submit"
+                        disabled={remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15}
+                        className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all"
+                      >
+                        {t('submit_record')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleClearForm}
+                        className="w-full py-2 bg-transparent text-slate-400 hover:text-white text-sm sm:text-xs transition-all"
+                      >
+                        {t('cancel')}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            {/* Middle Section: Expenses by Category */}
+            {Object.keys(expensesByCategory).length > 0 && (
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white">{t('expenses_by_category')}</h2>
+                  <div className="relative">
                     <select
-                      value={formCurrency}
-                      onChange={(e) => setFormCurrency(e.target.value as Currency)}
-                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                      value={categoryCurrency}
+                      onChange={(e) => setCategoryCurrency(e.target.value as Currency)}
+                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[80px]"
                     >
                       <option value="MMK">MMK</option>
                       <option value="THB">THB</option>
                     </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
-                    <input
-                      type="date"
-                      required
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
-                    >
-                      {(activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
-                  >
-                    {(formCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
-                      <option key={method} value={method}>{method}</option>
+                <div className="flex flex-col gap-3">
+                  {Object.entries(expensesByCategory)
+                    .filter(([_, amounts]) => amounts[categoryCurrency] > 0)
+                    .sort((a, b) => b[1][categoryCurrency] - a[1][categoryCurrency])
+                    .map(([cat, amounts]) => (
+                      <div key={cat} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02]">
+                        <span className="text-base font-medium text-slate-300">{translateCategory(cat)}</span>
+                        <div className="text-base font-medium text-rose-400 flex gap-2">
+                          <span>{formatCurrency(amounts[categoryCurrency], categoryCurrency)}</span>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </div>
 
-                <div>
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
-                  <input
-                    type="text"
-                    value={remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    className={cn(
-                      "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
-                      remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 
-                        ? "border-rose-500 focus:border-rose-500" 
-                        : "border-white/10 focus:border-indigo-500/50"
-                    )}
-                    placeholder={t('remark_placeholder')}
-                  />
-                  {remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
-                    <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
+                  {Object.entries(expensesByCategory).filter(([_, amounts]) => amounts[categoryCurrency] > 0).length === 0 && (
+                    <div className="py-4 text-center text-slate-500 text-sm">
+                      {t('no_transactions_found')}
+                    </div>
                   )}
                 </div>
-
-                <div className="mt-4 flex flex-col gap-2">
-                  <button
-                    type="submit"
-                    disabled={remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15}
-                    className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all"
-                  >
-                    {t('submit_record')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleClearForm}
-                    className="w-full py-2 bg-transparent text-slate-400 hover:text-white text-sm sm:text-xs transition-all"
-                  >
-                    {t('cancel')}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-
-        {/* Middle Section: Expenses by Category */}
-        {Object.keys(expensesByCategory).length > 0 && (
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white">{t('expenses_by_category')}</h2>
-              <div className="relative">
-                <select
-                  value={categoryCurrency}
-                  onChange={(e) => setCategoryCurrency(e.target.value as Currency)}
-                  className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[80px]"
-                >
-                  <option value="MMK">MMK</option>
-                  <option value="THB">THB</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-            <div className="flex flex-col gap-3">
-              {Object.entries(expensesByCategory)
-                .filter(([_, amounts]) => amounts[categoryCurrency] > 0)
-                .sort((a, b) => b[1][categoryCurrency] - a[1][categoryCurrency])
-                .map(([cat, amounts]) => (
-                <div key={cat} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02]">
-                  <span className="text-base font-medium text-slate-300">{cat}</span>
-                  <div className="text-base font-medium text-rose-400 flex gap-2">
-                    <span>{formatCurrency(amounts[categoryCurrency], categoryCurrency)}</span>
-                  </div>
-                </div>
-              ))}
-              
-              {Object.entries(expensesByCategory).filter(([_, amounts]) => amounts[categoryCurrency] > 0).length === 0 && (
-                <div className="py-4 text-center text-slate-500 text-sm">
-                  {t('no_transactions_found')}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Bottom Section: History Log */}
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
-            <h2 className="text-lg font-semibold text-white">{t('history_log')}</h2>
-            
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value as any)}
-                  className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[120px]"
-                >
-                  <option value="all" className="bg-slate-900 text-slate-300">{t('type')}</option>
-                  <option value="income" className="bg-slate-900 text-slate-300">{t('income')}</option>
-                  <option value="expense" className="bg-slate-900 text-slate-300">{t('expense')}</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-
-              <div className="relative">
-                <select
-                  value={filterPayment}
-                  onChange={(e) => setFilterPayment(e.target.value as any)}
-                  className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[130px] capitalize"
-                >
-                  <option value="all" className="bg-slate-900 text-slate-300">{t('payment_method')}</option>
-                  {[...MMK_PAYMENT_METHODS, 'true money'].filter((m, i, self) => self.indexOf(m) === i).map(m => (
-                    <option key={m} value={m} className="bg-slate-900 text-slate-300">{m}</option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-x-hidden">
-            {loading ? (
-              <div className="py-12 text-center text-slate-500 text-sm">{t('loading_transactions')}</div>
-            ) : paginatedTransactions.length === 0 ? (
-              <div className="py-12 text-center text-slate-500 text-sm">{t('no_transactions_found')}</div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {paginatedTransactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors group">
-                    <div className="flex flex-col gap-1 min-w-0 pr-3">
-                      <div className="flex items-center pb-0.5">
-                        <span className={cn(
-                          "px-2 py-0.5 text-xs sm:text-[10px] uppercase tracking-wider font-semibold rounded border whitespace-nowrap",
-                          getPaymentMethodColor(tx.payment_method)
-                        )}>
-                          {tx.payment_method}
-                        </span>
-                      </div>
-                      <span className="text-sm sm:text-xs font-medium text-slate-400 whitespace-nowrap">{tx.date}</span>
-                      <p className="font-bold text-white text-base truncate">{tx.category}</p>
-                      <p className="text-sm text-slate-400 truncate font-normal">{tx.remark || t('no_remark')}</p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1 shrink-0">
-                      <span className={cn(
-                        "text-base font-semibold",
-                        tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                      )}>
-                        {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, tx.currency || 'MMK')}
-                      </span>
-                      <div className="flex items-center gap-1 mt-1">
-                        <button
-                          onClick={() => handleEditClick(tx)}
-                          className="text-slate-500 hover:text-indigo-400 transition-colors p-1"
-                          title="Edit Record"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeletingId(tx.id)}
-                          className="text-slate-500 hover:text-rose-400 transition-colors p-1"
-                          title="Delete Record"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
-          </div>
 
-          {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-white/5">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              
-              <div className="text-xs text-slate-400 px-2 font-medium">
-                Page {currentPage} of {totalPages}
-              </div>
+            {/* Bottom Section: History Log */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
+              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
+                <h2 className="text-lg font-semibold text-white">{t('history_log')}</h2>
 
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-      </main>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value as any)}
+                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[120px]"
+                    >
+                      <option value="all" className="bg-slate-900 text-slate-300">{t('type')}</option>
+                      <option value="income" className="bg-slate-900 text-slate-300">{t('income')}</option>
+                      <option value="expense" className="bg-slate-900 text-slate-300">{t('expense')}</option>
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
 
-      {/* Footer */}
-      <div className="text-center pb-4 text-xs text-slate-500 font-medium w-full">
-        <p>Made with ❤️ by All Your AOT Thing</p>
-      </div>
-
-      {/* Edit Modal */}
-      {editingTx && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-          <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">Edit Transaction</h3>
-              <button
-                onClick={() => setEditingTx(null)}
-                className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleUpdateTransaction} className="space-y-4">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0.01"
-                    required
-                    value={editAmount}
-                    onChange={(e) => setEditAmount(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
-                  />
-                </div>
-                <div className="w-24">
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
-                  <select
-                    value={editCurrency}
-                    onChange={(e) => setEditCurrency(e.target.value as Currency)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
-                  >
-                    <option value="MMK">MMK</option>
-                    <option value="THB">THB</option>
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={filterPayment}
+                      onChange={(e) => setFilterPayment(e.target.value as any)}
+                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[130px] capitalize"
+                    >
+                      <option value="all" className="bg-slate-900 text-slate-300">{t('payment_method')}</option>
+                      {[...MMK_PAYMENT_METHODS, 'true money'].filter((m, i, self) => self.indexOf(m) === i).map(m => (
+                        <option key={m} value={m} className="bg-slate-900 text-slate-300">{m}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
-                  <input
-                    type="date"
-                    required
-                    value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
-                  <select
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value)}
-                    className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
-                  >
-                    {(editingTx.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+              <div className="flex-1 overflow-x-hidden">
+                {loading ? (
+                  <div className="py-12 text-center text-slate-500 text-sm">{t('loading_transactions')}</div>
+                ) : paginatedTransactions.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 text-sm">{t('no_transactions_found')}</div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {paginatedTransactions.map((tx) => (
+                      <div key={tx.id} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors group">
+                        <div className="flex flex-col gap-1 min-w-0 pr-3">
+                          <div className="flex items-center pb-0.5">
+                            <span className={cn(
+                              "px-2 py-0.5 text-xs sm:text-[10px] uppercase tracking-wider font-semibold rounded border whitespace-nowrap",
+                              getPaymentMethodColor(tx.payment_method)
+                            )}>
+                              {tx.payment_method}
+                            </span>
+                          </div>
+                          <span className="text-sm sm:text-xs font-medium text-slate-400 whitespace-nowrap">{tx.date}</span>
+                          <p className="font-bold text-white text-base truncate">{translateCategory(tx.category)}</p>
+                          <p className="text-sm text-slate-400 truncate font-normal">{tx.remark || t('no_remark')}</p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className={cn(
+                            "text-base font-semibold",
+                            tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                          )}>
+                            {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, tx.currency || 'MMK')}
+                          </span>
+                          <div className="flex items-center gap-1 mt-1">
+                            <button
+                              onClick={() => handleEditClick(tx)}
+                              className="text-slate-500 hover:text-indigo-400 transition-colors p-1"
+                              title="Edit Record"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => setDeletingId(tx.id)}
+                              className="text-slate-500 hover:text-rose-400 transition-colors p-1"
+                              title="Delete Record"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
-                <select
-                  value={editPaymentMethod}
-                  onChange={(e) => setEditPaymentMethod(e.target.value as PaymentMethod)}
-                  className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
-                >
-                  {(editCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
-                    <option key={method} value={method}>{method}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
-                <input
-                  type="text"
-                  value={editRemark}
-                  onChange={(e) => setEditRemark(e.target.value)}
-                  className={cn(
-                    "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
-                    editRemark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 
-                      ? "border-rose-500 focus:border-rose-500" 
-                      : "border-white/10 focus:border-indigo-500/50"
-                  )}
-                  placeholder={t('remark_placeholder')}
-                />
-                {editRemark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
-                  <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
+                  </div>
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setEditingTx(null)}
-                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs shadow-lg shadow-indigo-500/20"
-                >
-                  Update
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-white/5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
 
-      {/* Delete Confirmation Modal */}
-      {deletingId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-          <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-6 w-full max-w-[320px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200 mx-auto">
-            <h3 className="text-lg font-semibold text-white mb-2">{t('delete_transaction')}</h3>
-            <p className="text-sm text-slate-400 mb-6">
-              {t('delete_confirmation')}
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeletingId(null)}
-                className="px-4 py-2 text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all"
-              >
-                {t('cancel')}
-              </button>
-              <button
-                onClick={() => handleDelete(deletingId)}
-                className="px-4 py-2 text-sm font-medium text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 rounded-xl transition-all flex items-center gap-2"
-              >
-                <Trash2 className="w-4 h-4" />
-                {t('delete')}
-              </button>
+                  <div className="text-xs text-slate-400 px-2 font-medium">
+                    Page {currentPage} of {totalPages}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
+          </main>
+
+          {/* Footer */}
+          <div className="text-center pb-4 text-xs text-slate-500 font-medium w-full">
+            <p>Made with ❤️ by All Your AOT Thing</p>
           </div>
-        </div>
-      )}
+
+          {/* Edit Modal */}
+          {editingTx && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+              <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white">{t('edit_transaction')}</h3>
+                  <button
+                    onClick={() => setEditingTx(null)}
+                    className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateTransaction} className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+                      <select
+                        value={editCurrency}
+                        onChange={(e) => setEditCurrency(e.target.value as Currency)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                      >
+                        <option value="MMK">MMK</option>
+                        <option value="THB">THB</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
+                      <input
+                        type="date"
+                        required
+                        value={editDate}
+                        onChange={(e) => setEditDate(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
+                      <select
+                        value={editCategory}
+                        onChange={(e) => setEditCategory(e.target.value)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
+                      >
+                        {(editingTx.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
+                          <option key={cat} value={cat}>{translateCategory(cat)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
+                    <select
+                      value={editPaymentMethod}
+                      onChange={(e) => setEditPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
+                    >
+                      {(editCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
+                        <option key={method} value={method}>{method}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
+                    <input
+                      type="text"
+                      value={editRemark}
+                      onChange={(e) => setEditRemark(e.target.value)}
+                      className={cn(
+                        "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
+                        editRemark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
+                          ? "border-rose-500 focus:border-rose-500"
+                          : "border-white/10 focus:border-indigo-500/50"
+                      )}
+                      placeholder={t('remark_placeholder')}
+                    />
+                    {editRemark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
+                      <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setEditingTx(null)}
+                      className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-600 text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs shadow-lg shadow-indigo-500/20"
+                    >
+                      {t('update')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {deletingId && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+              <div className="bg-[#0f172a] border border-white/10 rounded-2xl p-6 w-full max-w-[320px] shadow-2xl scale-100 animate-in zoom-in-95 duration-200 mx-auto">
+                <h3 className="text-lg font-semibold text-white mb-2">{t('delete_transaction')}</h3>
+                <p className="text-sm text-slate-400 mb-6">
+                  {t('delete_confirmation')}
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setDeletingId(null)}
+                    className="px-4 py-2 text-sm font-medium text-slate-300 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all"
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    onClick={() => handleDelete(deletingId)}
+                    className="px-4 py-2 text-sm font-medium text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 rounded-xl transition-all flex items-center gap-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    {t('delete')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
