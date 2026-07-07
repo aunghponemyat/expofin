@@ -103,13 +103,13 @@ export function Dashboard() {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
-        navigate('/login');
+        navigate('/login', { replace: true });
       } else {
         setUser(session.user);
       }
     } catch (err) {
       console.error(err);
-      navigate('/login');
+      navigate('/login', { replace: true });
     }
   };
 
@@ -144,7 +144,7 @@ export function Dashboard() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   const handleClearForm = () => {
