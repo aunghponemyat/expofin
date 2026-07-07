@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase, hasSupabaseConfig } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, Loader2, Database, Globe } from 'lucide-react';
@@ -14,7 +14,23 @@ export function Auth() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleAuth = async (e: React.SubmitEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        navigate('/', { replace: true });
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session) {
+        navigate('/', { replace: true });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!hasSupabaseConfig) {
       setError("Supabase configuration is missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
@@ -38,7 +54,7 @@ export function Auth() {
           password,
         });
         if (error) throw error;
-        navigate('/');
+        navigate('/', { replace: true });
       } else {
         const { error } = await supabase.auth.signUp({
           email,
