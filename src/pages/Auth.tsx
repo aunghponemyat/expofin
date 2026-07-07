@@ -14,16 +14,16 @@ export function Auth() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleAuth = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!hasSupabaseConfig) {
       setError("Supabase configuration is missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.");
       return;
     }
-    
+
     setLoading(true);
     setError(null);
-    
+
     // Quick validation
     if (!email || !password) {
       setError("Please enter both email and password.");
@@ -98,13 +98,13 @@ export function Auth() {
           <form onSubmit={handleAuth} className="space-y-4">
             {error && (
               <div className={cn(
-                "p-3 rounded-lg text-sm", 
+                "p-3 rounded-lg text-sm",
                 error.includes("successful") ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-red-500/10 text-red-400 border border-red-500/20"
               )}>
                 {error}
               </div>
             )}
-            
+
             <div className="space-y-1">
               <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('email')}</label>
               <input
@@ -116,7 +116,7 @@ export function Auth() {
                 placeholder="you@example.com"
               />
             </div>
-            
+
             <div className="space-y-1">
               <label className="text-xs sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{t('password')}</label>
               <input
@@ -138,7 +138,7 @@ export function Auth() {
             </button>
           </form>
         </div>
-        
+
         <div className="bg-white/5 border-t border-white/10 p-4 text-center">
           <p className="text-sm text-slate-400 flex items-center justify-center gap-1">
             <span>{isLogin ? t('no_account') : t('already_have_account')}</span>
