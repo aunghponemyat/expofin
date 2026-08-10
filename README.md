@@ -88,6 +88,7 @@ Prerequisites:
    ```text
    http://localhost:3000
    ```
+7. Or you can easily test the app here: [ExpoFin](https://expofin.vercel.app)
 
 ## Available scripts
 
