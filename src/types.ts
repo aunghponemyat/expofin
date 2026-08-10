@@ -12,6 +12,6 @@ export interface Transaction {
   category: string;
   payment_method: PaymentMethod;
   date: string;
-  remark?: string;
+  remark?: string | null;
   created_at: string;
 }
