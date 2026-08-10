@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
+import { createGuestTransactionId, loadGuestTransactions, saveGuestTransactions } from '../lib/guestTransactions';
 import { useNavigate } from 'react-router-dom';
 import { Transaction, TransactionType, PaymentMethod, Currency } from '../types';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil } from 'lucide-react';
+import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../i18n/LanguageContext';
 import DatePicker from 'react-datepicker';
@@ -36,6 +37,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [user, setUser] = useState<any>(null);
+  const [isGuest, setIsGuest] = useState(false);
 
   // Delete Confirmation State
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -88,7 +90,7 @@ export function Dashboard() {
     if (user) {
       fetchTransactions();
     }
-  }, [user, selectedMonth]);
+  }, [user, selectedMonth, isGuest]);
 
   // Adjust categories based on active tab
   useEffect(() => {
@@ -103,18 +105,31 @@ export function Dashboard() {
     try {
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error || !session) {
-        navigate('/login', { replace: true });
+        setIsGuest(true);
+        setUser({ id: 'guest' });
       } else {
         setUser(session.user);
       }
     } catch (err) {
       console.error(err);
-      navigate('/login', { replace: true });
+      setIsGuest(true);
+      setUser({ id: 'guest' });
     }
   };
 
   const fetchTransactions = async () => {
     setLoading(true);
+
+    if (isGuest) {
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const guestTransactions = loadGuestTransactions().filter(transaction => {
+        const date = new Date(`${transaction.date}T00:00:00`);
+        return date.getFullYear() === year && date.getMonth() === month - 1;
+      });
+      setTransactions(guestTransactions);
+      setLoading(false);
+      return;
+    }
 
     // Calculate start and end based on selectedMonth
     const [year, month] = selectedMonth.split('-');
@@ -171,6 +186,19 @@ export function Dashboard() {
         remark: remark.trim() || null,
       };
 
+      if (isGuest) {
+        const transaction: Transaction = {
+          ...newTx,
+          id: createGuestTransactionId(),
+          created_at: new Date().toISOString(),
+        };
+        const updated = [transaction, ...loadGuestTransactions()].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        saveGuestTransactions(updated);
+        await fetchTransactions();
+        handleClearForm();
+        return;
+      }
+
       const { data, error } = await supabase
         .from('transactions')
         .insert([newTx])
@@ -189,6 +217,13 @@ export function Dashboard() {
 
   const handleDelete = async (id: string) => {
     try {
+      if (isGuest) {
+        saveGuestTransactions(loadGuestTransactions().filter(transaction => transaction.id !== id));
+        await fetchTransactions();
+        setDeletingId(null);
+        return;
+      }
+
       const { error } = await supabase.from('transactions').delete().eq('id', id);
       if (error) throw error;
       setTransactions(prev => prev.filter(t => t.id !== id));
@@ -221,6 +256,17 @@ export function Dashboard() {
         payment_method: editPaymentMethod,
         remark: editRemark.trim() || null,
       };
+
+      if (isGuest) {
+        const updated = loadGuestTransactions().map(transaction => transaction.id === editingTx.id
+          ? { ...transaction, ...updatedTx }
+          : transaction
+        );
+        saveGuestTransactions(updated);
+        await fetchTransactions();
+        setEditingTx(null);
+        return;
+      }
 
       const { data, error } = await supabase
         .from('transactions')
@@ -344,11 +390,12 @@ export function Dashboard() {
                 <span className="ml-2 text-xs font-semibold uppercase">{language}</span>
               </button>
               <button
-                onClick={handleSignOut}
+                onClick={isGuest ? () => navigate('/login') : handleSignOut}
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2"
+                title={isGuest ? t('sign_in') : t('log_out')}
               >
-                <span className="hidden sm:inline">{t('log_out')}</span>
-                <LogOut className="w-3 h-3" />
+                <span className="hidden sm:inline">{isGuest ? t('sign_in') : t('log_out')}</span>
+                {isGuest ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
               </button>
             </div>
           </header>
