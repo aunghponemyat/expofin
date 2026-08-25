@@ -7,6 +7,7 @@ import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
 import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../i18n/LanguageContext';
+import { NativeBanner } from '../components/NativeBanner';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
@@ -588,7 +589,7 @@ export function Dashboard() {
                 </div>
               </div>
             </div>
-
+            <NativeBanner />
             {/* Middle Section: Expenses by Category */}
             {Object.keys(expensesByCategory).length > 0 && (
               <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
