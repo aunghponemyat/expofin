@@ -4,6 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
   <title>ExpoFin</title>
 </head>
 
@@ -19,14 +20,14 @@
       var alreadyFired = false;
       try {
         alreadyFired = sessionStorage.getItem(SESSION_KEY) === '1';
-      } catch (e) {}
+      } catch (e) { }
       if (alreadyFired) return;
       document.addEventListener(
         'click',
         function () {
           try {
             sessionStorage.setItem(SESSION_KEY, '1');
-          } catch (e) {}
+          } catch (e) { }
           window.open(SMARTLINK, '_blank', 'noopener');
         },
         { once: true }

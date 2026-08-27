@@ -7,6 +7,7 @@ The app is especially tuned for day-to-day money tracking across Myanmar Kyat (M
 ## Core functionality
 
 - Email/password sign up and sign in through Supabase Auth.
+- Sign in with Google through Supabase Auth OAuth.
 - User-isolated transaction storage through Supabase Row Level Security.
 - Add income and expense records with amount, currency, date, category, payment method, and an optional short remark.
 - Edit and delete existing transactions.
@@ -77,18 +78,25 @@ Prerequisites:
 
    This creates the `transactions` table, enables Row Level Security, and adds policies so users can only access their own records.
 
-5. Start the app:
+5. (Optional) Enable Google sign-in:
+
+   1. In the [Google Cloud Console](https://console.cloud.google.com/apis/credentials), create an OAuth consent screen and an OAuth 2.0 Client ID (Web application).
+   2. Add your Supabase callback URL to the authorized redirect URIs: `https://<PROJECT_REF>.supabase.co/auth/v1/callback`.
+   3. In your Supabase dashboard, open Authentication -> Providers -> Google and paste the Client ID and Client Secret.
+   4. In Authentication -> URL Configuration, add your app URLs (e.g. `http://localhost:3000` and your production URL) to the redirect URL allowlist.
+
+6. Start the app:
 
    ```bash
    npm run dev
    ```
 
-6. Open the local Vite URL, usually:
+7. Open the local Vite URL, usually:
 
    ```text
    http://localhost:3000
    ```
-7. Or you can easily test the app here: [ExpoFin](https://expofin.vercel.app)
+8. Or you can easily test the app here: [ExpoFin](https://expofin.vercel.app)
 
 ## Available scripts
 

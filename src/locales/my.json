@@ -53,5 +53,7 @@
   "welcome_back": "ပြန်လည်ကြိုဆိုပါသည်",
   "create_account": "အကောင့်သစ် ဖွင့်မည်",
   "no_account": "အကောင့်မရှိသေးဘူးလား?",
-  "already_have_account": "အကောင့်ရှိပြီးသားလား?"
+  "already_have_account": "အကောင့်ရှိပြီးသားလား?",
+  "or": "သို့မဟုတ်",
+  "continue_with_google": "Google ဖြင့် ဆက်လက်အကောင့်ဝင်မည်"
 }
