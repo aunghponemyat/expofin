@@ -4,7 +4,7 @@ import { createGuestTransactionId, loadGuestTransactions, saveGuestTransactions 
 import { useNavigate } from 'react-router-dom';
 import { Transaction, TransactionType, PaymentMethod, Currency } from '../types';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil } from 'lucide-react';
+import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../i18n/LanguageContext';
 import { NativeBanner } from '../components/NativeBanner';
@@ -53,6 +53,7 @@ export function Dashboard() {
   const [editCurrency, setEditCurrency] = useState<Currency>('MMK');
 
   // Form State
+  const [isNewTxOpen, setIsNewTxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionType>('expense');
   const [formCurrency, setFormCurrency] = useState<Currency>('MMK');
   const [amount, setAmount] = useState('');
@@ -118,6 +119,18 @@ export function Dashboard() {
     }
   };
 
+  const getUserData = (): string => {
+    if (user.id !== "guest") {
+      if (user.app_metadata?.provider === "email") {
+        return user.email?.split("@")[0];
+      } else {
+        const userName = user.user_metadata?.name
+        return userName;
+      }
+    }
+    return "Guest";
+  };
+
   const fetchTransactions = async () => {
     setLoading(true);
 
@@ -169,6 +182,7 @@ export function Dashboard() {
     setCategory(activeTab === 'expense' ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]);
     setPaymentMethod('cash');
     setRemark('');
+    setIsNewTxOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -374,6 +388,7 @@ export function Dashboard() {
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans flex justify-center sm:p-6 items-start">
       <div className="w-full max-w-xl sm:bg-[#0f172a] sm:border sm:border-white/10 sm:rounded-3xl sm:shadow-2xl flex flex-col relative min-h-screen sm:min-h-0 sm:my-4">
         <div className="p-4 sm:p-8 flex flex-col gap-6">
+          <span className="self-center font-bold text-[#F5E727]">{getUserData()}</span>
           {/* Header */}
           <header className="flex justify-between items-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
             <div className="flex flex-col gap-1 items-start">
@@ -395,7 +410,7 @@ export function Dashboard() {
                 className="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg text-xs font-semibold transition-all flex items-center space-x-2"
                 title={isGuest ? t('sign_in') : t('log_out')}
               >
-                <span className="hidden sm:inline">{isGuest ? t('sign_in') : t('log_out')}</span>
+                <span className="">{isGuest ? t('sign_in') : t('log_out')}</span>
                 {isGuest ? <LogIn className="w-3 h-3" /> : <LogOut className="w-3 h-3" />}
               </button>
             </div>
@@ -453,141 +468,7 @@ export function Dashboard() {
                 </div>
               </div>
 
-              {/* Input Form */}
-              <div className="flex flex-col bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 overflow-hidden">
-                <h2 className="text-lg font-semibold mb-4 text-white">{t('new_transaction')}</h2>
-                <div className="flex flex-col gap-4 flex-1">
-                  <div className="flex gap-2 mb-2">
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('income')}
-                      className={cn(
-                        "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
-                        activeTab === 'income'
-                          ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-2 border-emerald-400/50"
-                          : "bg-white/5 text-slate-400 border border-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30"
-                      )}
-                    >
-                      {t('income')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setActiveTab('expense')}
-                      className={cn(
-                        "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
-                        activeTab === 'expense'
-                          ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20 border-2 border-rose-400/50"
-                          : "bg-white/5 text-slate-400 border border-white/5 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30"
-                      )}
-                    >
-                      {t('expense')}
-                    </button>
-                  </div>
-
-                  <form onSubmit={handleSubmit} className="space-y-3">
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0.01"
-                          required
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
-                          placeholder="0.00"
-                        />
-                      </div>
-                      <div className="w-24">
-                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
-                        <select
-                          value={formCurrency}
-                          onChange={(e) => setFormCurrency(e.target.value as Currency)}
-                          className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
-                        >
-                          <option value="MMK">MMK</option>
-                          <option value="THB">THB</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
-                        <input
-                          type="date"
-                          required
-                          value={date}
-                          onChange={(e) => setDate(e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
-                        <select
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
-                        >
-                          {(activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
-                            <option key={cat} value={cat}>{translateCategory(cat)}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
-                      <select
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
-                      >
-                        {(formCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
-                          <option key={method} value={method}>{method}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
-                      <input
-                        type="text"
-                        value={remark}
-                        onChange={(e) => setRemark(e.target.value)}
-                        className={cn(
-                          "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
-                          remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
-                            ? "border-rose-500 focus:border-rose-500"
-                            : "border-white/10 focus:border-indigo-500/50"
-                        )}
-                        placeholder={t('remark_placeholder')}
-                      />
-                      {remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
-                        <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
-                      )}
-                    </div>
-
-                    <div className="mt-4 flex flex-col gap-2">
-                      <button
-                        type="submit"
-                        disabled={remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15}
-                        className="w-full py-3 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all"
-                      >
-                        {t('submit_record')}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleClearForm}
-                        className="w-full py-2 bg-transparent text-slate-400 hover:text-white text-sm sm:text-xs transition-all"
-                      >
-                        {t('cancel')}
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              </div>
+              {/* Input Form moved to floating action button + modal */}
             </div>
             <NativeBanner />
             {/* Middle Section: Expenses by Category */}
@@ -747,6 +628,166 @@ export function Dashboard() {
           <div className="text-center pb-4 text-xs text-slate-500 font-medium w-full">
             <p>Made with ❤️ by All Your AOT Thing</p>
           </div>
+
+          {/* Floating Action Button */}
+          <button
+            type="button"
+            onClick={() => setIsNewTxOpen(true)}
+            className="fixed bottom-6 right-6 z-40 group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
+            aria-label={t('new_transaction')}
+          >
+            <Plus className="w-6 h-6 shrink-0" />
+            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-3 group-hover:pr-1 transition-all duration-300 text-sm font-bold">
+              {t('new_transaction')}
+            </span>
+          </button>
+
+          {/* New Transaction Modal */}
+          {isNewTxOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
+              <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold text-white">{t('new_transaction')}</h3>
+                  <button
+                    onClick={() => setIsNewTxOpen(false)}
+                    className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex gap-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('income')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
+                      activeTab === 'income'
+                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 border-2 border-emerald-400/50"
+                        : "bg-white/5 text-slate-400 border border-white/5 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/30"
+                    )}
+                  >
+                    {t('income')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('expense')}
+                    className={cn(
+                      "flex-1 py-3 rounded-xl text-sm font-bold transition-all uppercase",
+                      activeTab === 'expense'
+                        ? "bg-rose-500 text-white shadow-lg shadow-rose-500/20 border-2 border-rose-400/50"
+                        : "bg-white/5 text-slate-400 border border-white/5 hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30"
+                    )}
+                  >
+                    {t('expense')}
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0.01"
+                        required
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div className="w-24">
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+                      <select
+                        value={formCurrency}
+                        onChange={(e) => setFormCurrency(e.target.value as Currency)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                      >
+                        <option value="MMK">MMK</option>
+                        <option value="THB">THB</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
+                      <input
+                        type="date"
+                        required
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
+                      >
+                        {(activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
+                          <option key={cat} value={cat}>{translateCategory(cat)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
+                    <select
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
+                    >
+                      {(formCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
+                        <option key={method} value={method}>{method}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
+                    <input
+                      type="text"
+                      value={remark}
+                      onChange={(e) => setRemark(e.target.value)}
+                      className={cn(
+                        "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
+                        remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
+                          ? "border-rose-500 focus:border-rose-500"
+                          : "border-white/10 focus:border-indigo-500/50"
+                      )}
+                      placeholder={t('remark_placeholder')}
+                    />
+                    {remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15 && (
+                      <p className="text-xs sm:text-[10px] text-rose-400 mt-1 font-medium">{t('remark_warning')}</p>
+                    )}
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={handleClearForm}
+                      className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs"
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15}
+                      className="flex-1 py-3 bg-indigo-500 hover:bg-indigo-400 disabled:opacity-50 disabled:pointer-events-none text-white rounded-xl font-bold transition-all uppercase tracking-wider text-xs shadow-lg shadow-indigo-500/20"
+                    >
+                      {t('submit_record')}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {/* Edit Modal */}
           {editingTx && (
