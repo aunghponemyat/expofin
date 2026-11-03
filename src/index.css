@@ -6,6 +6,99 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+/* Shared by the new and edit dialogs, including Safari's native form controls. */
+.transaction-modal {
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.transaction-dialog {
+  min-width: 0;
+  padding: 1.25rem;
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.transaction-form,
+.transaction-details-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+}
+
+.transaction-amount-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem;
+  align-items: end;
+  gap: 1rem;
+}
+
+.transaction-form label {
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.transaction-form :is(input, select) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 3.125rem;
+  min-height: 3.125rem;
+  padding: 0.75rem;
+  /* Keep 16px text at every width to avoid iOS focus zoom, including landscape. */
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.transaction-form select {
+  /* WebKit otherwise includes the full option text in the dialog's scroll width. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-form input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.transaction-form input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+.transaction-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+}
+
+.transaction-actions button {
+  min-height: 3rem;
+  padding-inline: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 640px) {
+  .transaction-dialog {
+    padding: 1.5rem;
+  }
+
+  .transaction-details-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 1rem;
+  }
+}
+
 /* Custom styling for react-datepicker to match dark slate/indigo theme */
 .react-datepicker {
   background-color: #0f172a !important;
