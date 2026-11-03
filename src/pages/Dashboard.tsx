@@ -633,7 +633,7 @@ export function Dashboard() {
           <button
             type="button"
             onClick={() => setIsNewTxOpen(true)}
-            className="fixed bottom-6 right-6 z-40 group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
+            className="fixed cursor-pointer bottom-6 right-6 z-40 group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
             aria-label={t('new_transaction')}
           >
             <Plus className="w-6 h-6 shrink-0" />
@@ -644,19 +644,25 @@ export function Dashboard() {
 
           {/* New Transaction Modal */}
           {isNewTxOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-              <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">{t('new_transaction')}</h3>
+            <div className="transaction-modal fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <div
+                className="transaction-dialog bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="new-transaction-title"
+              >
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <h3 id="new-transaction-title" className="text-xl font-bold text-white">{t('new_transaction')}</h3>
                   <button
                     onClick={() => setIsNewTxOpen(false)}
-                    className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label={t('cancel')}
+                    className="shrink-0 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-3 mb-5">
                   <button
                     type="button"
                     onClick={() => setActiveTab('income')}
@@ -683,27 +689,29 @@ export function Dashboard() {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
+                <form onSubmit={handleSubmit} className="transaction-form">
+                  <div className="transaction-amount-row">
+                    <div className="min-w-0">
+                      <label htmlFor="new-amount" className="font-bold text-slate-400 uppercase block">{t('amount')}</label>
                       <input
+                        id="new-amount"
                         type="number"
                         step="0.01"
                         min="0.01"
                         required
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
+                        className="bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-indigo-500/50"
                         placeholder="0.00"
                       />
                     </div>
-                    <div className="w-24">
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+                    <div className="min-w-0">
+                      <label htmlFor="new-currency" className="font-bold text-slate-400 uppercase block">{t('currency')}</label>
                       <select
+                        id="new-currency"
                         value={formCurrency}
                         onChange={(e) => setFormCurrency(e.target.value as Currency)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                        className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none"
                       >
                         <option value="MMK">MMK</option>
                         <option value="THB">THB</option>
@@ -711,23 +719,25 @@ export function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="transaction-details-row">
                     <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
+                      <label htmlFor="new-date" className="font-bold text-slate-400 uppercase block">{t('date')}</label>
                       <input
+                        id="new-date"
                         type="date"
                         required
                         value={date}
                         onChange={(e) => setDate(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
+                        className="bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
+                      <label htmlFor="new-category" className="font-bold text-slate-400 uppercase block">{t('category')}</label>
                       <select
+                        id="new-category"
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
+                        className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none"
                       >
                         {(activeTab === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
                           <option key={cat} value={cat}>{translateCategory(cat)}</option>
@@ -737,11 +747,12 @@ export function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
+                    <label htmlFor="new-payment_method" className="font-bold text-slate-400 uppercase block">{t('payment_method')}</label>
                     <select
+                      id="new-payment_method"
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
+                      className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none capitalize"
                     >
                       {(formCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
                         <option key={method} value={method}>{method}</option>
@@ -750,13 +761,14 @@ export function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
+                    <label htmlFor="new-remark" className="font-bold text-slate-400 uppercase block">{t('remark')}</label>
                     <input
+                      id="new-remark"
                       type="text"
                       value={remark}
                       onChange={(e) => setRemark(e.target.value)}
                       className={cn(
-                        "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
+                        "bg-white/5 border rounded-lg text-white focus:outline-none transition-all",
                         remark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
                           ? "border-rose-500 focus:border-rose-500"
                           : "border-white/10 focus:border-indigo-500/50"
@@ -768,7 +780,7 @@ export function Dashboard() {
                     )}
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div className="transaction-actions">
                     <button
                       type="button"
                       onClick={handleClearForm}
@@ -791,38 +803,46 @@ export function Dashboard() {
 
           {/* Edit Modal */}
           {editingTx && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-all duration-300">
-              <div className="bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl scale-100 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-bold text-white">{t('edit_transaction')}</h3>
+            <div className="transaction-modal fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <div
+                className="transaction-dialog bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="edit-transaction-title"
+              >
+                <div className="flex items-center justify-between gap-3 mb-5">
+                  <h3 id="edit-transaction-title" className="text-xl font-bold text-white">{t('edit_transaction')}</h3>
                   <button
                     onClick={() => setEditingTx(null)}
-                    className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
+                    aria-label={t('cancel')}
+                    className="shrink-0 p-2 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                <form onSubmit={handleUpdateTransaction} className="space-y-4">
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('amount')}</label>
+                <form onSubmit={handleUpdateTransaction} className="transaction-form">
+                  <div className="transaction-amount-row">
+                    <div className="min-w-0">
+                      <label htmlFor="edit-amount" className="font-bold text-slate-400 uppercase block">{t('amount')}</label>
                       <input
+                        id="edit-amount"
                         type="number"
                         step="0.01"
                         min="0.01"
                         required
                         value={editAmount}
                         onChange={(e) => setEditAmount(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none focus:border-indigo-500/50"
+                        className="bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none focus:border-indigo-500/50"
                       />
                     </div>
-                    <div className="w-24">
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('currency')}</label>
+                    <div className="min-w-0">
+                      <label htmlFor="edit-currency" className="font-bold text-slate-400 uppercase block">{t('currency')}</label>
                       <select
+                        id="edit-currency"
                         value={editCurrency}
                         onChange={(e) => setEditCurrency(e.target.value as Currency)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base focus:outline-none appearance-none"
+                        className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none"
                       >
                         <option value="MMK">MMK</option>
                         <option value="THB">THB</option>
@@ -830,23 +850,25 @@ export function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="transaction-details-row">
                     <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('date')}</label>
+                      <label htmlFor="edit-date" className="font-bold text-slate-400 uppercase block">{t('date')}</label>
                       <input
+                        id="edit-date"
                         type="date"
                         required
                         value={editDate}
                         onChange={(e) => setEditDate(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none"
+                        className="bg-white/5 border border-white/10 rounded-lg text-white focus:outline-none"
                       />
                     </div>
                     <div>
-                      <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('category')}</label>
+                      <label htmlFor="edit-category" className="font-bold text-slate-400 uppercase block">{t('category')}</label>
                       <select
+                        id="edit-category"
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value)}
-                        className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none"
+                        className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none"
                       >
                         {(editingTx.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map(cat => (
                           <option key={cat} value={cat}>{translateCategory(cat)}</option>
@@ -856,11 +878,12 @@ export function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('payment_method')}</label>
+                    <label htmlFor="edit-payment_method" className="font-bold text-slate-400 uppercase block">{t('payment_method')}</label>
                     <select
+                      id="edit-payment_method"
                       value={editPaymentMethod}
                       onChange={(e) => setEditPaymentMethod(e.target.value as PaymentMethod)}
-                      className="w-full bg-slate-900 border border-white/10 rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none appearance-none capitalize"
+                      className="bg-slate-900 border border-white/10 rounded-lg text-white focus:outline-none appearance-none capitalize"
                     >
                       {(editCurrency === 'MMK' ? MMK_PAYMENT_METHODS : THB_PAYMENT_METHODS).map(method => (
                         <option key={method} value={method}>{method}</option>
@@ -869,13 +892,14 @@ export function Dashboard() {
                   </div>
 
                   <div>
-                    <label className="text-[15px] sm:text-[13px] font-bold text-slate-400 uppercase mb-1 block">{t('remark')}</label>
+                    <label htmlFor="edit-remark" className="font-bold text-slate-400 uppercase block">{t('remark')}</label>
                     <input
+                      id="edit-remark"
                       type="text"
                       value={editRemark}
                       onChange={(e) => setEditRemark(e.target.value)}
                       className={cn(
-                        "w-full bg-white/5 border rounded-lg p-3 sm:p-2.5 text-white text-base sm:text-xs focus:outline-none transition-all",
+                        "bg-white/5 border rounded-lg text-white focus:outline-none transition-all",
                         editRemark.trim().split(/\s+/).filter(w => w.length > 0).length > 15
                           ? "border-rose-500 focus:border-rose-500"
                           : "border-white/10 focus:border-indigo-500/50"
@@ -887,7 +911,7 @@ export function Dashboard() {
                     )}
                   </div>
 
-                  <div className="flex gap-3 pt-4">
+                  <div className="transaction-actions">
                     <button
                       type="button"
                       onClick={() => setEditingTx(null)}
