@@ -386,7 +386,7 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans flex justify-center sm:p-6 items-start">
-      <div className="w-full max-w-xl sm:bg-[#0f172a] sm:border sm:border-white/10 sm:rounded-3xl sm:shadow-2xl flex flex-col relative min-h-screen sm:min-h-0 sm:my-4">
+      <div className="w-full max-w-xl lg:max-w-3xl xl:max-w-5xl 2xl:max-w-6xl sm:bg-[#0f172a] sm:border sm:border-white/10 sm:rounded-3xl sm:shadow-2xl flex flex-col relative min-h-screen sm:min-h-0 sm:my-4">
         <div className="p-4 sm:p-8 flex flex-col gap-6">
           <span className="self-center font-bold text-[#F5E727]">{getUserData()}</span>
           {/* Header */}
@@ -421,8 +421,8 @@ export function Dashboard() {
             <div className="flex flex-col gap-6">
 
               {/* Balances */}
-              <div className="flex flex-col gap-4">
-                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 relative overflow-hidden">
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 relative overflow-hidden lg:flex-1">
                   <div className="absolute top-0 right-0 p-4 flex gap-2">
                     <select
                       value={balanceCurrency}
@@ -456,7 +456,7 @@ export function Dashboard() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 lg:flex-1">
                   <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-4">
                     <p className="text-[15px] sm:text-[13px] font-bold text-emerald-400 uppercase tracking-widest mb-1">{t('total_income')}</p>
                     <p className="text-base sm:text-lg font-light text-emerald-400">+{formatCurrency(balances[balanceCurrency].totalIncome, balanceCurrency)}</p>
@@ -471,9 +471,11 @@ export function Dashboard() {
               {/* Input Form moved to floating action button + modal */}
             </div>
             <NativeBanner />
+            {/* Category & History — side-by-side on wide screens */}
+            <div className="flex flex-col lg:flex-row gap-6">
             {/* Middle Section: Expenses by Category */}
             {Object.keys(expensesByCategory).length > 0 && (
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:w-2/5 lg:shrink-0">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-white">{t('expenses_by_category')}</h2>
                   <div className="relative">
@@ -511,7 +513,7 @@ export function Dashboard() {
             )}
 
             {/* Bottom Section: History Log */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:flex-1 lg:min-w-0">
               <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
                 <h2 className="text-lg font-semibold text-white">{t('history_log')}</h2>
 
@@ -622,6 +624,7 @@ export function Dashboard() {
                 </div>
               )}
             </div>
+            </div>{/* end category & history flex wrapper */}
           </main>
 
           {/* Footer */}
