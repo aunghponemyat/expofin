@@ -476,157 +476,157 @@ export function Dashboard() {
             <NativeBanner />
             {/* Category & History — side-by-side on wide screens */}
             <div className="flex flex-col lg:flex-row gap-6">
-            {/* Middle Section: Expenses by Category */}
-            {Object.keys(expensesByCategory).length > 0 && (
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:w-2/5 lg:shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">{t('expenses_by_category')}</h2>
-                  <div className="relative">
-                    <select
-                      value={categoryCurrency}
-                      onChange={(e) => setCategoryCurrency(e.target.value as Currency)}
-                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[80px]"
-                    >
-                      <option value="MMK">MMK</option>
-                      <option value="THB">THB</option>
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              {/* Middle Section: Expenses by Category */}
+              {Object.keys(expensesByCategory).length > 0 && (
+                <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:w-2/5 lg:shrink-0">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-white">{t('expenses_by_category')}</h2>
+                    <div className="relative">
+                      <select
+                        value={categoryCurrency}
+                        onChange={(e) => setCategoryCurrency(e.target.value as Currency)}
+                        className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[80px]"
+                      >
+                        <option value="MMK">MMK</option>
+                        <option value="THB">THB</option>
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    {Object.entries(expensesByCategory)
+                      .filter(([_, amounts]) => amounts[categoryCurrency] > 0)
+                      .sort((a, b) => b[1][categoryCurrency] - a[1][categoryCurrency])
+                      .map(([cat, amounts]) => (
+                        <div key={cat} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02]">
+                          <span className="text-base font-medium text-slate-300">{translateCategory(cat)}</span>
+                          <div className="text-base font-medium text-rose-400 flex gap-2">
+                            <span>{formatCurrency(amounts[categoryCurrency], categoryCurrency)}</span>
+                          </div>
+                        </div>
+                      ))}
+
+                    {Object.entries(expensesByCategory).filter(([_, amounts]) => amounts[categoryCurrency] > 0).length === 0 && (
+                      <div className="py-4 text-center text-slate-500 text-sm">
+                        {t('no_transactions_found')}
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                  {Object.entries(expensesByCategory)
-                    .filter(([_, amounts]) => amounts[categoryCurrency] > 0)
-                    .sort((a, b) => b[1][categoryCurrency] - a[1][categoryCurrency])
-                    .map(([cat, amounts]) => (
-                      <div key={cat} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02]">
-                        <span className="text-base font-medium text-slate-300">{translateCategory(cat)}</span>
-                        <div className="text-base font-medium text-rose-400 flex gap-2">
-                          <span>{formatCurrency(amounts[categoryCurrency], categoryCurrency)}</span>
-                        </div>
-                      </div>
-                    ))}
+              )}
 
-                  {Object.entries(expensesByCategory).filter(([_, amounts]) => amounts[categoryCurrency] > 0).length === 0 && (
-                    <div className="py-4 text-center text-slate-500 text-sm">
-                      {t('no_transactions_found')}
+              {/* Bottom Section: History Log */}
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:flex-1 lg:min-w-0">
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
+                  <h2 className="text-lg font-semibold text-white">{t('history_log')}</h2>
+
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <select
+                        value={filterType}
+                        onChange={(e) => setFilterType(e.target.value as any)}
+                        className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[120px]"
+                      >
+                        <option value="all" className="bg-slate-900 text-slate-300">{t('type')}</option>
+                        <option value="income" className="bg-slate-900 text-slate-300">{t('income')}</option>
+                        <option value="expense" className="bg-slate-900 text-slate-300">{t('expense')}</option>
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+
+                    <div className="relative">
+                      <select
+                        value={filterPayment}
+                        onChange={(e) => setFilterPayment(e.target.value as any)}
+                        className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[130px] capitalize"
+                      >
+                        <option value="all" className="bg-slate-900 text-slate-300">{t('payment_method')}</option>
+                        {[...MMK_PAYMENT_METHODS, 'true money'].filter((m, i, self) => self.indexOf(m) === i).map(m => (
+                          <option key={m} value={m} className="bg-slate-900 text-slate-300">{m}</option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-x-hidden">
+                  {loading ? (
+                    <div className="py-12 text-center text-slate-500 text-sm">{t('loading_transactions')}</div>
+                  ) : paginatedTransactions.length === 0 ? (
+                    <div className="py-12 text-center text-slate-500 text-sm">{t('no_transactions_found')}</div>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      {paginatedTransactions.map((tx) => (
+                        <div key={tx.id} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors group">
+                          <div className="flex flex-col gap-1 min-w-0 pr-3">
+                            <div className="flex items-center pb-0.5">
+                              <span className={cn(
+                                "px-2 py-0.5 text-xs sm:text-[10px] uppercase tracking-wider font-semibold rounded border whitespace-nowrap",
+                                getPaymentMethodColor(tx.payment_method)
+                              )}>
+                                {tx.payment_method}
+                              </span>
+                            </div>
+                            <span className="text-sm sm:text-xs font-medium text-slate-400 whitespace-nowrap">{tx.date}</span>
+                            <p className="font-bold text-white text-base truncate">{translateCategory(tx.category)}</p>
+                            <p className="text-sm text-slate-400 truncate font-normal">{tx.remark || t('no_remark')}</p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={cn(
+                              "text-base font-semibold",
+                              tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                            )}>
+                              {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, tx.currency || 'MMK')}
+                            </span>
+                            <div className="flex items-center gap-1 mt-1">
+                              <button
+                                onClick={() => handleEditClick(tx)}
+                                className="text-slate-500 hover:text-indigo-400 transition-colors p-1"
+                                title="Edit Record"
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => setDeletingId(tx.id)}
+                                className="text-slate-500 hover:text-rose-400 transition-colors p-1"
+                                title="Delete Record"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
-            )}
 
-            {/* Bottom Section: History Log */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl flex flex-col p-5 overflow-hidden lg:flex-1 lg:min-w-0">
-              <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-4">
-                <h2 className="text-lg font-semibold text-white">{t('history_log')}</h2>
-
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <select
-                      value={filterType}
-                      onChange={(e) => setFilterType(e.target.value as any)}
-                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[120px]"
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-white/5">
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
                     >
-                      <option value="all" className="bg-slate-900 text-slate-300">{t('type')}</option>
-                      <option value="income" className="bg-slate-900 text-slate-300">{t('income')}</option>
-                      <option value="expense" className="bg-slate-900 text-slate-300">{t('expense')}</option>
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
 
-                  <div className="relative">
-                    <select
-                      value={filterPayment}
-                      onChange={(e) => setFilterPayment(e.target.value as any)}
-                      className="appearance-none bg-slate-900 border border-white/10 hover:border-white/20 text-slate-300 text-sm sm:text-xs rounded-lg pl-3 pr-8 py-2.5 sm:py-2 focus:outline-none focus:border-indigo-500/50 transition-all cursor-pointer min-w-[130px] capitalize"
+                    <div className="text-xs text-slate-400 px-2 font-medium">
+                      Page {currentPage} of {totalPages}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                      className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
                     >
-                      <option value="all" className="bg-slate-900 text-slate-300">{t('payment_method')}</option>
-                      {[...MMK_PAYMENT_METHODS, 'true money'].filter((m, i, self) => self.indexOf(m) === i).map(m => (
-                        <option key={m} value={m} className="bg-slate-900 text-slate-300">{m}</option>
-                      ))}
-                    </select>
-                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-x-hidden">
-                {loading ? (
-                  <div className="py-12 text-center text-slate-500 text-sm">{t('loading_transactions')}</div>
-                ) : paginatedTransactions.length === 0 ? (
-                  <div className="py-12 text-center text-slate-500 text-sm">{t('no_transactions_found')}</div>
-                ) : (
-                  <div className="flex flex-col gap-3">
-                    {paginatedTransactions.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between p-3 border border-white/5 rounded-xl bg-white/[0.02] hover:bg-white/5 transition-colors group">
-                        <div className="flex flex-col gap-1 min-w-0 pr-3">
-                          <div className="flex items-center pb-0.5">
-                            <span className={cn(
-                              "px-2 py-0.5 text-xs sm:text-[10px] uppercase tracking-wider font-semibold rounded border whitespace-nowrap",
-                              getPaymentMethodColor(tx.payment_method)
-                            )}>
-                              {tx.payment_method}
-                            </span>
-                          </div>
-                          <span className="text-sm sm:text-xs font-medium text-slate-400 whitespace-nowrap">{tx.date}</span>
-                          <p className="font-bold text-white text-base truncate">{translateCategory(tx.category)}</p>
-                          <p className="text-sm text-slate-400 truncate font-normal">{tx.remark || t('no_remark')}</p>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          <span className={cn(
-                            "text-base font-semibold",
-                            tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
-                          )}>
-                            {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount, tx.currency || 'MMK')}
-                          </span>
-                          <div className="flex items-center gap-1 mt-1">
-                            <button
-                              onClick={() => handleEditClick(tx)}
-                              className="text-slate-500 hover:text-indigo-400 transition-colors p-1"
-                              title="Edit Record"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => setDeletingId(tx.id)}
-                              className="text-slate-500 hover:text-rose-400 transition-colors p-1"
-                              title="Delete Record"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
                 )}
               </div>
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t border-white/5">
-                  <button
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-
-                  <div className="text-xs text-slate-400 px-2 font-medium">
-                    Page {currentPage} of {totalPages}
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center border border-white/5 text-slate-400 hover:bg-white/10 disabled:opacity-50 transition-all"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              )}
-            </div>
             </div>{/* end category & history flex wrapper */}
           </main>
 
@@ -643,13 +643,13 @@ export function Dashboard() {
               className="cursor-pointer group flex items-center bg-slate-800 hover:bg-slate-700 border border-white/15 text-indigo-300 rounded-full shadow-lg shadow-black/40 transition-all duration-300 p-3.5"
               aria-label={t('batch_add')}
             >
-              <ListPlus className="w-5 h-5 shrink-0" />
-              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2.5 group-hover:pr-1 transition-all duration-300 text-xs font-bold">
+              <Plus className="w-6 h-6 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2.5 group-hover:pr-1 transition-all duration-300 text-s font-bold">
                 {t('batch_add')}
               </span>
             </button>
 
-            <button
+            {/* <button
               type="button"
               onClick={() => setIsNewTxOpen(true)}
               className="cursor-pointer group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
@@ -659,7 +659,7 @@ export function Dashboard() {
               <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-3 group-hover:pr-1 transition-all duration-300 text-sm font-bold">
                 {t('new_transaction')}
               </span>
-            </button>
+            </button> */}
           </div>
 
           <BatchTransactionModal
@@ -672,7 +672,7 @@ export function Dashboard() {
           />
 
           {/* New Transaction Modal */}
-          {isNewTxOpen && (
+          {/* {isNewTxOpen && (
             <div className="transaction-modal fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
               <div
                 className="transaction-dialog bg-slate-900 border border-white/10 rounded-2xl w-full max-w-md shadow-2xl"
@@ -828,7 +828,7 @@ export function Dashboard() {
                 </form>
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Edit Modal */}
           {editingTx && (
