@@ -55,5 +55,14 @@
   "no_account": "Don't have an account?",
   "already_have_account": "Already have an account?",
   "or": "or",
-  "continue_with_google": "Continue with Google"
+  "continue_with_google": "Continue with Google",
+  "batch_add": "Batch Entry",
+  "batch_transactions": "Batch Transactions",
+  "batch_date": "Transaction Date",
+  "add_row": "Add Another Record",
+  "remove_row": "Remove row",
+  "submit_batch": "Save All Records",
+  "saving": "Saving...",
+  "records_count": "Records",
+  "batch_error": "Failed to save batch transactions. Please try again."
 }

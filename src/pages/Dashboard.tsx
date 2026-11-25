@@ -4,33 +4,21 @@ import { createGuestTransactionId, loadGuestTransactions, saveGuestTransactions 
 import { useNavigate } from 'react-router-dom';
 import { Transaction, TransactionType, PaymentMethod, Currency } from '../types';
 import { format, parseISO, startOfMonth, endOfMonth } from 'date-fns';
-import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil, Plus } from 'lucide-react';
+import { LogIn, LogOut, Trash2, X, ChevronLeft, ChevronRight, ChevronDown, Globe, Pencil, Plus, ListPlus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useLanguage } from '../i18n/LanguageContext';
 import { NativeBanner } from '../components/NativeBanner';
+import { BatchTransactionModal } from '../components/BatchTransactionModal';
+import {
+  EXPENSE_CATEGORIES,
+  INCOME_CATEGORIES,
+  CATEGORY_LABEL_KEYS,
+  CategoryValue,
+  MMK_PAYMENT_METHODS,
+  THB_PAYMENT_METHODS,
+} from '../lib/transactionOptions';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
-const EXPENSE_CATEGORIES = ['bills', 'food', 'groceries', 'electronics', 'transport', 'entertainment', 'health', 'other'];
-const INCOME_CATEGORIES = ['salary', 'bonus', 'freelance', 'investment', 'gift', 'other'];
-const CATEGORY_LABEL_KEYS = {
-  'bills': 'category_meter_bills',
-  'food': 'category_food',
-  'groceries': 'category_groceries',
-  'electronics': 'category_electronics',
-  'transport': 'category_transport',
-  'entertainment': 'category_entertainment',
-  'health': 'category_health',
-  'other': 'category_other',
-  'salary': 'category_salary',
-  'bonus': 'category_bonus',
-  'freelance': 'category_freelance',
-  'investment': 'category_investment',
-  'gift': 'category_gift',
-} as const;
-type CategoryValue = keyof typeof CATEGORY_LABEL_KEYS;
-const MMK_PAYMENT_METHODS: PaymentMethod[] = ['cash', 'kpay', 'wave', 'bank transfer'];
-const THB_PAYMENT_METHODS: PaymentMethod[] = ['cash', 'true money', 'bank transfer'];
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -54,6 +42,7 @@ export function Dashboard() {
 
   // Form State
   const [isNewTxOpen, setIsNewTxOpen] = useState(false);
+  const [isBatchTxOpen, setIsBatchTxOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<TransactionType>('expense');
   const [formCurrency, setFormCurrency] = useState<Currency>('MMK');
   const [amount, setAmount] = useState('');
@@ -228,6 +217,20 @@ export function Dashboard() {
       console.error('Error adding transaction:', error);
       alert('Failed to add transaction. Please try again.');
     }
+  };
+
+  const handleBatchSaved = async (savedDate: string, inserted: Transaction[]) => {
+    const savedMonth = savedDate.slice(0, 7);
+    if (savedMonth !== selectedMonth) {
+      setSelectedMonth(savedMonth);
+    } else if (isGuest) {
+      await fetchTransactions();
+    } else {
+      setTransactions(prev =>
+        [...inserted, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      );
+    }
+    setIsBatchTxOpen(false);
   };
 
   const handleDelete = async (id: string) => {
@@ -632,18 +635,41 @@ export function Dashboard() {
             <p>Made with ❤️ by All Your AOT Thing</p>
           </div>
 
-          {/* Floating Action Button */}
-          <button
-            type="button"
-            onClick={() => setIsNewTxOpen(true)}
-            className="fixed cursor-pointer bottom-6 right-6 z-40 group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
-            aria-label={t('new_transaction')}
-          >
-            <Plus className="w-6 h-6 shrink-0" />
-            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-3 group-hover:pr-1 transition-all duration-300 text-sm font-bold">
-              {t('new_transaction')}
-            </span>
-          </button>
+          {/* Floating Action Buttons */}
+          <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsBatchTxOpen(true)}
+              className="cursor-pointer group flex items-center bg-slate-800 hover:bg-slate-700 border border-white/15 text-indigo-300 rounded-full shadow-lg shadow-black/40 transition-all duration-300 p-3.5"
+              aria-label={t('batch_add')}
+            >
+              <ListPlus className="w-5 h-5 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-2.5 group-hover:pr-1 transition-all duration-300 text-xs font-bold">
+                {t('batch_add')}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsNewTxOpen(true)}
+              className="cursor-pointer group flex items-center bg-indigo-500 hover:bg-indigo-400 text-white rounded-full shadow-lg shadow-indigo-500/30 transition-all duration-300 p-4"
+              aria-label={t('new_transaction')}
+            >
+              <Plus className="w-6 h-6 shrink-0" />
+              <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-xs group-hover:opacity-100 group-hover:ml-3 group-hover:pr-1 transition-all duration-300 text-sm font-bold">
+                {t('new_transaction')}
+              </span>
+            </button>
+          </div>
+
+          <BatchTransactionModal
+            isOpen={isBatchTxOpen}
+            onClose={() => setIsBatchTxOpen(false)}
+            userId={user.id}
+            isGuest={isGuest}
+            defaultCurrency={balanceCurrency}
+            onSaved={handleBatchSaved}
+          />
 
           {/* New Transaction Modal */}
           {isNewTxOpen && (
